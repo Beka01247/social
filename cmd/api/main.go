@@ -3,6 +3,7 @@ package main
 import (
 	"time"
 
+	"github.com/Beka01247/social/internal/auth"
 	"github.com/Beka01247/social/internal/db"
 	"github.com/Beka01247/social/internal/env"
 	"github.com/Beka01247/social/internal/mailer"
@@ -57,6 +58,11 @@ func main() {
 				user: env.GetString("AUTH_BASIC_USER", "admin"),
 				pass: env.GetString("AUTH_BASIC_USER", "admin"),
 			},
+			token: tokenConfig{
+				secret: env.GetString("AUTH_TOKEN_SECRET", "example"),
+				exp:    time.Hour * 24 * 3, // 3 days
+				iss:    "social",
+			},
 		},
 	}
 
@@ -82,11 +88,14 @@ func main() {
 
 	mailClient := mailer.NewMockMailer(cfg.mail.fromEmail)
 
+	jwtAuthenticator := auth.NewJWTAuthenticator(cfg.auth.token.secret, cfg.auth.token.iss, cfg.auth.token.iss)
+
 	app := &application{
-		config: cfg,
-		store:  store,
-		logger: logger,
-		mailer: mailClient,
+		config:        cfg,
+		store:         store,
+		logger:        logger,
+		mailer:        mailClient,
+		authenticator: jwtAuthenticator,
 	}
 
 	mux := app.mount()
