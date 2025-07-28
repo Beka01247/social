@@ -74,13 +74,13 @@ func main() {
 
 	store := store.NewStorage(db)
 
-	mailer := mailer.NewSendgrid(cfg.mail.sendGrid.apiKey, cfg.mail.fromEmail)
+	mailClient := mailer.NewMockMailer(cfg.mail.fromEmail)
 
 	app := &application{
 		config: cfg,
 		store:  store,
 		logger: logger,
-		mailer: mailer,
+		mailer: mailClient,
 	}
 
 	mux := app.mount()
