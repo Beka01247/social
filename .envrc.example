@@ -5,3 +5,7 @@ export SENDGRID_API_KEY="your_sendgrid_api_key_here"
 export FROM_EMAIL="your_email@example.com"
 export MAILTRAP_API_KEY="your_mailtrap_api_key_here"
 export ENV="development"
+export REDIS_ENABLED=true
+export REDIS_ADDR=":6379"
+export REDIS_PW=""
+export REDIS_DB=0

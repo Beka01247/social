@@ -8,6 +8,8 @@ import (
 	"github.com/Beka01247/social/internal/env"
 	"github.com/Beka01247/social/internal/mailer"
 	"github.com/Beka01247/social/internal/store"
+	"github.com/Beka01247/social/internal/store/cache"
+	"github.com/go-redis/redis/v8"
 	_ "github.com/lib/pq"
 	"go.uber.org/zap"
 )
@@ -41,6 +43,12 @@ func main() {
 			maxOpenConns: env.GetInt("DB_MAX_OPEN_CONS", 30),
 			maxIdleConns: env.GetInt("DB_MAX_IDLE_CONS", 30),
 			maxIdleTime:  env.GetString("DB_MAX_OPEN_TIME", "15m"),
+		},
+		redisCfg: redisConfig{
+			addr:    env.GetString("REDIS_ADDR", "localhost:6379"),
+			pw:      env.GetString("REDIS_PW", ""),
+			db:      env.GetInt("REDIS_DB", 0),
+			enabled: env.GetBool("REDIS_ENABLED", false),
 		},
 		env: env.GetString("ENV", "development"),
 		mail: mailConfig{
@@ -84,7 +92,17 @@ func main() {
 	defer db.Close()
 	logger.Info("db connection pool established")
 
+	// cache
+	var rdb *redis.Client
+	if cfg.redisCfg.enabled {
+		rdb = cache.NewRedisClient(cfg.redisCfg.addr, cfg.redisCfg.pw, cfg.redisCfg.db)
+		logger.Info("redis cache connection established")
+
+		defer rdb.Close()
+	}
+
 	store := store.NewStorage(db)
+	cacheStorage := cache.NewRedisStorage(rdb)
 
 	mailClient := mailer.NewMockMailer(cfg.mail.fromEmail)
 
@@ -93,6 +111,7 @@ func main() {
 	app := &application{
 		config:        cfg,
 		store:         store,
+		cacheStorage:  cacheStorage,
 		logger:        logger,
 		mailer:        mailClient,
 		authenticator: jwtAuthenticator,
