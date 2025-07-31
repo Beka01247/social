@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/Beka01247/social/compare/v1.0.0...v1.1.0) (2025-07-31)
+
+
+### Features
+
+* update api version automatically ([a3317f4](https://github.com/Beka01247/social/commit/a3317f4bcec4683d213bdcdc20215ad982e03922))
+
 ## 1.0.0 (2025-07-31)
 
 
