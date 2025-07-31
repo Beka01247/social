@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/Beka01247/social/internal/auth"
+	"github.com/Beka01247/social/internal/ratelimiter"
 	"github.com/Beka01247/social/internal/store"
 	"github.com/Beka01247/social/internal/store/cache"
 	"go.uber.org/zap"
@@ -13,7 +14,7 @@ import (
 
 func newTestApplication(t *testing.T, cfg config) *application {
 	t.Helper()
-	
+
 	// use to enable logs
 	//logger := zap.Must(zap.NewProduction()).Sugar()
 	logger := zap.NewNop().Sugar()
@@ -21,12 +22,19 @@ func newTestApplication(t *testing.T, cfg config) *application {
 	mockCacheStore := cache.NewMockStore()
 	testAuth := &auth.TestAuthenticator{}
 
+	// rate limiter
+	rateLimiter := ratelimiter.NewFixedWindowLimiter(
+		cfg.rateLimiter.RequestsPerTimeFrame,
+		cfg.rateLimiter.TimeFrame,
+	)
+
 	return &application{
 		logger:        logger,
 		store:         mockStore,
 		cacheStorage:  mockCacheStore,
 		authenticator: testAuth,
-		config: 			 cfg,
+		config:        cfg,
+		rateLimiter:   rateLimiter,
 	}
 }
 

@@ -7,6 +7,7 @@ import (
 	"github.com/Beka01247/social/internal/db"
 	"github.com/Beka01247/social/internal/env"
 	"github.com/Beka01247/social/internal/mailer"
+	"github.com/Beka01247/social/internal/ratelimiter"
 	"github.com/Beka01247/social/internal/store"
 	"github.com/Beka01247/social/internal/store/cache"
 	"github.com/go-redis/redis/v8"
@@ -72,6 +73,11 @@ func main() {
 				iss:    "social",
 			},
 		},
+		rateLimiter: ratelimiter.Config{
+			RequestsPerTimeFrame: env.GetInt("RATELIMITER_REQUESTS_COUNT", 20),
+			TimeFrame:            time.Second * 5,
+			Enabled:              env.GetBool("RATE_LIMITER_ENABLED", true),
+		},
 	}
 
 	// logger
@@ -101,6 +107,12 @@ func main() {
 		defer rdb.Close()
 	}
 
+	// rate limiter
+	rateLimiter := ratelimiter.NewFixedWindowLimiter(
+		cfg.rateLimiter.RequestsPerTimeFrame,
+		cfg.rateLimiter.TimeFrame,
+	)
+
 	store := store.NewStorage(db)
 	cacheStorage := cache.NewRedisStorage(rdb)
 
@@ -115,6 +127,7 @@ func main() {
 		logger:        logger,
 		mailer:        mailClient,
 		authenticator: jwtAuthenticator,
+		rateLimiter:   rateLimiter,
 	}
 
 	mux := app.mount()

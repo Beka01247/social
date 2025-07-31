@@ -6,7 +6,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-type TestAuthenticator struct {} 
+type TestAuthenticator struct{}
 
 const secret = "test"
 
