@@ -10,31 +10,55 @@ permissions:
 jobs:
   bump-version:
     runs-on: ubuntu-latest
-    if: github.actor != 'github-actions[bot]' # prevent endless loop
+
+    # don’t re-run when the previous commit came from this workflow
+    if: github.actor != 'github-actions[bot]'
+
     steps:
+      # 1 ── checkout
       - uses: actions/checkout@v4
 
+      # 2 ── pull the latest version from CHANGELOG.md
       - id: get_version
-        name: Grab latest version from CHANGELOG.md
+        name: Extract version from CHANGELOG.md
         run: |
-          VERSION=$(grep -oP '^\[\K[0-9]+\.[0-9]+\.[0-9]+' CHANGELOG.md | head -1)
-          echo "Found: $VERSION"
+          # Matches [1.2.3]  or  [v1.2.3]  anywhere in the file
+          VERSION=$(grep -oP '\[v?\K[0-9]+\.[0-9]+\.[0-9]+' CHANGELOG.md | head -1)
+
+          echo "Found VERSION=>>$VERSION<<"
+
+          # Hard-fail if nothing was found
+          if [ -z "$VERSION" ]; then
+            echo "❌  Could not extract version. Dumping first lines of CHANGELOG.md:"
+            head -15 CHANGELOG.md
+            exit 1
+          fi
+
+          # Pass it to later steps
           echo "VERSION=$VERSION" >> "$GITHUB_OUTPUT"
 
+      # 3 ── replace the string in cmd/api/main.go
       - name: Write version into cmd/api/main.go
+        env:
+          VER: ${{ steps.get_version.outputs.VERSION }}
         run: |
-          sed -i -E "s|const version = \"[^\"]+\"|const version = \"${{ steps.get_version.outputs.VERSION }}\"|" cmd/api/main.go
-          grep -n "const version" cmd/api/main.go   # show result
+          [ -n "$VER" ] || { echo "VERSION is empty – aborting"; exit 1; }
+          # Replace whatever is between the quotes
+          sed -i -E "s|const version = \"[^\"]*\"|const version = \"$VER\"|" cmd/api/main.go
+          echo "After replacement:"
+          grep -n "const version" cmd/api/main.go
 
-      - name: Commit and push (only if changed)
+      # 4 ── commit & push only when something changed
+      - name: Commit and push (if needed)
         run: |
           git config --global user.email "action@github.com"
           git config --global user.name  "GitHub Action"
 
           if git diff --quiet; then
             echo "No changes – nothing to commit."
-          else
-            git add cmd/api/main.go
-            git commit -m "chore: bump version to ${{ steps.get_version.outputs.VERSION }}"
-            git push
+            exit 0
           fi
+
+          git add cmd/api/main.go
+          git commit -m "chore: bump version to ${{ steps.get_version.outputs.VERSION }}"
+          git push
