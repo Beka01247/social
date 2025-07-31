@@ -17,31 +17,16 @@ jobs:
         id: get_version
         run: |
           VERSION=$(grep -oP '\[\K[0-9]+\.[0-9]+\.[0-9]+' CHANGELOG.md | head -1)
-          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-          echo "Found version: $VERSION"
+          echo "::set-output name=VERSION::$VERSION"
 
       - name: Update version in cmd/api/main.go
         run: |
-          sed -i "s/const version = \".*\"/const version = \"${{ steps.get_version.outputs.VERSION }}\"/" cmd/api/main.go
-          echo "Updated main.go with version ${{ steps.get_version.outputs.VERSION }}"
-          grep "const version" cmd/api/main.go
+          sed -i "s/const version = \".*\"/var version = \"${{ steps.get_version.outputs.VERSION }}\"/" cmd/api/main.go
 
       - name: Commit and push if changed
         run: |
           git config --global user.email "action@github.com"
           git config --global user.name "GitHub Action"
-
-          echo "Current git status:"
-          git status
-
-          echo "Checking if main.go changed:"
-          git diff cmd/api/main.go
-
-          if git diff --quiet cmd/api/main.go; then
-            echo "No changes to commit"
-          else
-            echo "Changes detected, committing..."
-            git add cmd/api/main.go
-            git commit -m "Update version to ${{ steps.get_version.outputs.VERSION }}"
-            git push
-          fi
+          git add cmd/api/main.go
+          git commit -m "Update version to ${{ steps.get_version.outputs.VERSION }}" || echo "No changes to commit"
+          git push
