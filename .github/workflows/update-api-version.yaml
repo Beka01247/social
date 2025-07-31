@@ -1,32 +1,40 @@
 name: Update Version and Release
+
 on:
   push:
-    branches:
-      - master
+    branches: [master]
 
 permissions:
   contents: write
 
 jobs:
-  update-version:
+  bump-version:
     runs-on: ubuntu-latest
+    if: github.actor != 'github-actions[bot]' # prevent endless loop
     steps:
       - uses: actions/checkout@v4
 
-      - name: Extract latest version from CHANGELOG.md
-        id: get_version
+      - id: get_version
+        name: Grab latest version from CHANGELOG.md
         run: |
-          VERSION=$(grep -oP '\[\K[0-9]+\.[0-9]+\.[0-9]+' CHANGELOG.md | head -1)
-          echo "::set-output name=VERSION::$VERSION"
+          VERSION=$(grep -oP '^\[\K[0-9]+\.[0-9]+\.[0-9]+' CHANGELOG.md | head -1)
+          echo "Found: $VERSION"
+          echo "VERSION=$VERSION" >> "$GITHUB_OUTPUT"
 
-      - name: Update version in cmd/api/main.go
+      - name: Write version into cmd/api/main.go
         run: |
-          sed -i "s/const version = \".*\"/var version = \"${{ steps.get_version.outputs.VERSION }}\"/" cmd/api/main.go
+          sed -i -E "s|const version = \"[^\"]+\"|const version = \"${{ steps.get_version.outputs.VERSION }}\"|" cmd/api/main.go
+          grep -n "const version" cmd/api/main.go   # show result
 
-      - name: Commit and push if changed
+      - name: Commit and push (only if changed)
         run: |
           git config --global user.email "action@github.com"
-          git config --global user.name "GitHub Action"
-          git add cmd/api/main.go
-          git commit -m "Update version to ${{ steps.get_version.outputs.VERSION }}" || echo "No changes to commit"
-          git push
+          git config --global user.name  "GitHub Action"
+
+          if git diff --quiet; then
+            echo "No changes – nothing to commit."
+          else
+            git add cmd/api/main.go
+            git commit -m "chore: bump version to ${{ steps.get_version.outputs.VERSION }}"
+            git push
+          fi
