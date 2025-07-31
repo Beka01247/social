@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.3](https://github.com/Beka01247/social/compare/v1.1.2...v1.1.3) (2025-07-31)
+
+
+### Bug Fixes
+
+* update api version 4 ([e7a04cc](https://github.com/Beka01247/social/commit/e7a04cc5ca062031765bf6cff3a06020e5a818e7))
+
 ## [1.1.2](https://github.com/Beka01247/social/compare/v1.1.1...v1.1.2) (2025-07-31)
 
 
