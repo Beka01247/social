@@ -1,11 +1,33 @@
 # Copy this file to .envrc and fill in your actual values
+# Server Configuration
 export ADDR=":8080"
-export DB_ADDR="postgres://admin:adminpassword@localhost/social?sslmode=disable"
-export SENDGRID_API_KEY="your_sendgrid_api_key_here"
-export FROM_EMAIL="your_email@example.com"
-export MAILTRAP_API_KEY="your_mailtrap_api_key_here"
+export EXTERNAL_URL="http://localhost:8080"
+export FRONTEND_URL="http://localhost:3000"
 export ENV="development"
+
+# Database Configuration
+export DB_ADDR=""
+export DB_MAX_OPEN_CONS=30
+export DB_MAX_IDLE_CONS=30
+export DB_MAX_OPEN_TIME="15m"
+
+# Authentication
+export JWT_SECRET="your-secret-jwt-key"
+
+# Email Configuration (SendGrid)
+export SENDGRID_API_KEY="your-sendgrid-api-key-here"
+export FROM_EMAIL="noreply@yourdomain.com"
+
+# Email Configuration (Mailtrap - for development)
+export MAILTRAP_API_KEY="your-mailtrap-api-key-here"
+
+# Redis Configuration
 export REDIS_ENABLED=true
-export REDIS_ADDR=":6379"
+export REDIS_ADDR="localhost:6379"
 export REDIS_PW=""
 export REDIS_DB=0
+
+# Rate Limiting
+export RATELIMITER_ENABLED=true
+export RATELIMITER_REQUESTS_PER_TIME_FRAME=20
+export RATELIMITER_TIME_FRAME="1m"
